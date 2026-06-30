@@ -1,4 +1,11 @@
 # Copy to terraform.tfvars and set your own values.
 subscription_id = "00000000-0000-0000-0000-000000000000"
-location        = "swedencentral"
+location        = "spaincentral"
 name_prefix     = "amraclre"
+
+# Private endpoint only (no public traffic). Set to false for a public cluster.
+enable_private_networking = true
+
+# Optional: extra Entra principal (managed identity / service principal objectId)
+# to demonstrate multiple ACL assignments. Leave empty to skip.
+extra_principal_object_id = ""

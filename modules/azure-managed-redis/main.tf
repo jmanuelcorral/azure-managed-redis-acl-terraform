@@ -12,7 +12,7 @@ resource "azapi_resource" "cluster" {
     }
     properties = {
       highAvailability    = var.high_availability ? "Enabled" : "Disabled"
-      publicNetworkAccess = "Enabled"
+      publicNetworkAccess = var.public_network_access
     }
   }
 
@@ -53,4 +53,34 @@ resource "azapi_resource" "access_policy_assignment" {
       }
     }
   }
+}
+
+locals {
+  resource_group_name = element(split("/", var.resource_group_id), 4)
+}
+
+# Optional private endpoint for private-only connectivity (subresource "redisEnterprise").
+resource "azurerm_private_endpoint" "this" {
+  count               = var.private_endpoint == null ? 0 : 1
+  name                = coalesce(var.private_endpoint.name, "${var.name}-pe")
+  location            = var.location
+  resource_group_name = local.resource_group_name
+  subnet_id           = var.private_endpoint.subnet_id
+
+  private_service_connection {
+    name                           = "${var.name}-psc"
+    private_connection_resource_id = azapi_resource.cluster.id
+    subresource_names              = ["redisEnterprise"]
+    is_manual_connection           = false
+  }
+
+  dynamic "private_dns_zone_group" {
+    for_each = length(var.private_endpoint.private_dns_zone_ids) > 0 ? [1] : []
+    content {
+      name                 = "default"
+      private_dns_zone_ids = var.private_endpoint.private_dns_zone_ids
+    }
+  }
+
+  tags = var.tags
 }
